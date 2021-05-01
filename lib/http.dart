@@ -3,6 +3,7 @@
 // BSD-style license that can be found in the LICENSE file.
 
 /// A composable, [Future]-based library for making HTTP requests.
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -27,23 +28,35 @@ export 'src/streamed_response.dart';
 
 /// Sends an HTTP HEAD request with the given headers to the given URL.
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// This automatically initializes a new [Client] and closes that client once
 /// the request is complete. If you're planning on making multiple requests to
 /// the same server, you should use a single [Client] for all of those requests.
 ///
 /// For more fine-grained control over the request, use [Request] instead.
-Future<Response> head(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.head(url, headers: headers));
+Future<Response> head(Uri url,
+        {Map<String, String>? headers, Duration? timeout}) =>
+    _withClient(
+        (client) => client.head(url, headers: headers, timeout: timeout));
 
 /// Sends an HTTP GET request with the given headers to the given URL.
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// This automatically initializes a new [Client] and closes that client once
 /// the request is complete. If you're planning on making multiple requests to
 /// the same server, you should use a single [Client] for all of those requests.
 ///
 /// For more fine-grained control over the request, use [Request] instead.
-Future<Response> get(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.get(url, headers: headers));
+Future<Response> get(Uri url,
+        {Map<String, String>? headers, Duration? timeout}) =>
+    _withClient(
+        (client) => client.get(url, headers: headers, timeout: timeout));
 
 /// Sends an HTTP POST request with the given headers and body to the given URL.
 ///
@@ -61,12 +74,19 @@ Future<Response> get(Uri url, {Map<String, String>? headers}) =>
 ///
 /// [encoding] defaults to [utf8].
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> post(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.post(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        Duration? timeout}) =>
+    _withClient((client) => client.post(url,
+        headers: headers, body: body, encoding: encoding, timeout: timeout));
 
 /// Sends an HTTP PUT request with the given headers and body to the given URL.
 ///
@@ -84,12 +104,19 @@ Future<Response> post(Uri url,
 ///
 /// [encoding] defaults to [utf8].
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> put(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.put(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        Duration? timeout}) =>
+    _withClient((client) => client.put(url,
+        headers: headers, body: body, encoding: encoding, timeout: timeout));
 
 /// Sends an HTTP PATCH request with the given headers and body to the given
 /// URL.
@@ -108,14 +135,25 @@ Future<Response> put(Uri url,
 ///
 /// [encoding] defaults to [utf8].
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> patch(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.patch(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        Duration? timeout}) =>
+    _withClient((client) => client.patch(url,
+        headers: headers, body: body, encoding: encoding, timeout: timeout));
 
 /// Sends an HTTP DELETE request with the given headers to the given URL.
+///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
 ///
 /// This automatically initializes a new [Client] and closes that client once
 /// the request is complete. If you're planning on making multiple requests to
@@ -123,9 +161,12 @@ Future<Response> patch(Uri url,
 ///
 /// For more fine-grained control over the request, use [Request] instead.
 Future<Response> delete(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.delete(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        Duration? timeout}) =>
+    _withClient((client) => client.delete(url,
+        headers: headers, body: body, encoding: encoding, timeout: timeout));
 
 /// Sends an HTTP GET request with the given headers to the given URL and
 /// returns a Future that completes to the body of the response as a [String].
@@ -133,14 +174,20 @@ Future<Response> delete(Uri url,
 /// The Future will emit a [ClientException] if the response doesn't have a
 /// success status code.
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// This automatically initializes a new [Client] and closes that client once
 /// the request is complete. If you're planning on making multiple requests to
 /// the same server, you should use a single [Client] for all of those requests.
 ///
 /// For more fine-grained control over the request and response, use [Request]
 /// instead.
-Future<String> read(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.read(url, headers: headers));
+Future<String> read(Uri url,
+        {Map<String, String>? headers, Duration? timeout}) =>
+    _withClient(
+        (client) => client.read(url, headers: headers, timeout: timeout));
 
 /// Sends an HTTP GET request with the given headers to the given URL and
 /// returns a Future that completes to the body of the response as a list of
@@ -149,14 +196,20 @@ Future<String> read(Uri url, {Map<String, String>? headers}) =>
 /// The Future will emit a [ClientException] if the response doesn't have a
 /// success status code.
 ///
+/// If [timeout] is not null the request will be aborted if it takes longer than
+/// the given duration to complete, and the returned future will complete as an
+/// error with a [TimeoutException].
+///
 /// This automatically initializes a new [Client] and closes that client once
 /// the request is complete. If you're planning on making multiple requests to
 /// the same server, you should use a single [Client] for all of those requests.
 ///
 /// For more fine-grained control over the request and response, use [Request]
 /// instead.
-Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.readBytes(url, headers: headers));
+Future<Uint8List> readBytes(Uri url,
+        {Map<String, String>? headers, Duration? timeout}) =>
+    _withClient(
+        (client) => client.readBytes(url, headers: headers, timeout: timeout));
 
 Future<T> _withClient<T>(Future<T> Function(Client) fn) async {
   var client = Client();

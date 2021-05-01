@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -33,13 +34,23 @@ abstract class Client {
 
   /// Sends an HTTP HEAD request with the given headers to the given URL.
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
-  Future<Response> head(Uri url, {Map<String, String>? headers});
+  Future<Response> head(Uri url,
+      {Map<String, String>? headers, Duration? timeout});
 
   /// Sends an HTTP GET request with the given headers to the given URL.
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
-  Future<Response> get(Uri url, {Map<String, String>? headers});
+  Future<Response> get(Uri url,
+      {Map<String, String>? headers, Duration? timeout});
 
   /// Sends an HTTP POST request with the given headers and body to the given
   /// URL.
@@ -58,9 +69,16 @@ abstract class Client {
   ///
   /// [encoding] defaults to [utf8].
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
   Future<Response> post(Uri url,
-      {Map<String, String>? headers, Object? body, Encoding? encoding});
+      {Map<String, String>? headers,
+      Object? body,
+      Encoding? encoding,
+      Duration? timeout});
 
   /// Sends an HTTP PUT request with the given headers and body to the given
   /// URL.
@@ -79,9 +97,16 @@ abstract class Client {
   ///
   /// [encoding] defaults to [utf8].
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
   Future<Response> put(Uri url,
-      {Map<String, String>? headers, Object? body, Encoding? encoding});
+      {Map<String, String>? headers,
+      Object? body,
+      Encoding? encoding,
+      Duration? timeout});
 
   /// Sends an HTTP PATCH request with the given headers and body to the given
   /// URL.
@@ -100,15 +125,29 @@ abstract class Client {
   ///
   /// [encoding] defaults to [utf8].
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
   Future<Response> patch(Uri url,
-      {Map<String, String>? headers, Object? body, Encoding? encoding});
+      {Map<String, String>? headers,
+      Object? body,
+      Encoding? encoding,
+      Duration? timeout});
 
   /// Sends an HTTP DELETE request with the given headers to the given URL.
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request, use [send] instead.
   Future<Response> delete(Uri url,
-      {Map<String, String>? headers, Object? body, Encoding? encoding});
+      {Map<String, String>? headers,
+      Object? body,
+      Encoding? encoding,
+      Duration? timeout});
 
   /// Sends an HTTP GET request with the given headers to the given URL and
   /// returns a Future that completes to the body of the response as a String.
@@ -116,9 +155,14 @@ abstract class Client {
   /// The Future will emit a [ClientException] if the response doesn't have a
   /// success status code.
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request and response, use [send] or
   /// [get] instead.
-  Future<String> read(Uri url, {Map<String, String>? headers});
+  Future<String> read(Uri url,
+      {Map<String, String>? headers, Duration? timeout});
 
   /// Sends an HTTP GET request with the given headers to the given URL and
   /// returns a Future that completes to the body of the response as a list of
@@ -127,12 +171,25 @@ abstract class Client {
   /// The Future will emit a [ClientException] if the response doesn't have a
   /// success status code.
   ///
+  /// If [timeout] is not null the request will be aborted if it takes longer
+  /// than the given duration to complete, and the returned future will complete
+  /// as an error with a [TimeoutException].
+  ///
   /// For more fine-grained control over the request and response, use [send] or
   /// [get] instead.
-  Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers});
+  Future<Uint8List> readBytes(Uri url,
+      {Map<String, String>? headers, Duration? timeout});
 
   /// Sends an HTTP request and asynchronously returns the response.
-  Future<StreamedResponse> send(BaseRequest request);
+  ///
+  /// If [contentTimeout] is not null the request will be aborted if it takes
+  /// longer than the given duration to receive the entire response. If the
+  /// timeout occurs before any reply is received from the server the returned
+  /// future will as an error with a [TimeoutException]. If the timout occurs
+  /// after the reply has been started but before the entire body has been read
+  /// the response stream will emit a [TimeoutException] and close.
+  Future<StreamedResponse> send(BaseRequest request, {Duration?
+    contentTimeout});
 
   /// Closes the client and cleans up any resources associated with it.
   ///
