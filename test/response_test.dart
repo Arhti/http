@@ -105,4 +105,15 @@ void main() {
           ]));
     }
   });
+
+  test('checks a set-cookie', () {
+    final response = http.Response('', 200, headers: {
+      'set-cookie':
+          'AWSALB=AWSALB_TEST; Expires=Tue, 26 Apr 2022 00:26:55 GMT; Path=/'
+    });
+
+    expect(response.cookies.length, 1);
+    expect(response.cookies[0].name, 'AWSALB');
+    expect(response.cookies[0].value, 'AWSALB_TEST');
+  });
 }
