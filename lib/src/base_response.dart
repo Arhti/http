@@ -65,7 +65,7 @@ abstract class BaseResponse {
   /// otherwise empty.
   static String _getSetCookie(final Map<String, dynamic> headers) {
     for (final key in headers.keys) {
-      // Some systems return "set-cookies" for various cases.
+      // Some systems return "set-cookie" for various cases.
       if (key.toLowerCase() == 'set-cookie') {
         return headers[key] as String;
       }
