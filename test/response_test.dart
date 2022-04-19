@@ -70,4 +70,39 @@ void main() {
       expect(response.bodyBytes, equals([104, 101, 108, 108, 111]));
     });
   });
+
+  // If multiple set-cookies are included in the response header,
+  // the http library will merge them into a comma-separated list
+  // and set them in the Response object.
+  test('checks multiple set-cookies', () {
+    final response = http.Response('', 200, headers: {
+      'set-cookie':
+          // This response header contains 6 set-cookies
+          'AWSALB=AWSALB_TEST; Expires=Tue, 26 Apr 2022 00:26:55 GMT; Path=/,AWSALBCORS=AWSALBCORS_TEST; Expires=Tue, 26 Apr 2022 00:26:55 GMT; Path=/; SameSite=None; Secure,jwt_token=JWT_TEST; Domain=.test.com; Max-Age=31536000; Path=/; expires=Wed, 19-Apr-2023 00:26:55 GMT; SameSite=lax; Secure,csrf_token=CSRF_TOKEN_TEST_1; Domain=.test.com; Max-Age=31536000; Path=/; expires=Wed, 19-Apr-2023 00:26:55 GMT,csrf_token=CSRF_TOKEN_TEST_2; Domain=.test.com; Max-Age=31536000; Path=/; expires=Wed, 19-Apr-2023 00:26:55 GMT,wuuid=WUUID_TEST'
+    });
+
+    expect(response.cookies.length, 6);
+    for (final cookie in response.cookies) {
+      expect(
+          cookie.name,
+          anyOf([
+            'AWSALB',
+            'AWSALBCORS',
+            'jwt_token',
+            'csrf_token',
+            'wuuid',
+            'csrf_token'
+          ]));
+      expect(
+          cookie.value,
+          anyOf([
+            'AWSALB_TEST',
+            'AWSALBCORS_TEST',
+            'JWT_TEST',
+            'CSRF_TOKEN_TEST_1',
+            'CSRF_TOKEN_TEST_2',
+            'WUUID_TEST'
+          ]));
+    }
+  });
 }
