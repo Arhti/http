@@ -2,7 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
-import 'package:universal_io/io.dart';
+import 'dart:io';
 
 import 'base_client.dart';
 import 'base_request.dart';

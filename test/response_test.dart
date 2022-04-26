@@ -113,7 +113,7 @@ void main() {
     });
 
     expect(response.cookies.length, 1);
-    expect(response.cookies[0].name, 'AWSALB');
-    expect(response.cookies[0].value, 'AWSALB_TEST');
+    expect(response.cookies.first.name, 'AWSALB');
+    expect(response.cookies.first.value, 'AWSALB_TEST');
   });
 }
