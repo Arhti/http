@@ -2,6 +2,8 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:io';
+
 import 'base_client.dart';
 import 'base_request.dart';
 
@@ -24,15 +26,19 @@ abstract class BaseResponse {
   /// If the size of the request is not known in advance, this is `null`.
   final int? contentLength;
 
-  // TODO(nweiz): automatically parse cookies from headers
-
   // TODO(nweiz): make this a HttpHeaders object.
   final Map<String, String> headers;
+
+  /// The cookies parsed from [headers].
+  final List<Cookie> cookies = [];
 
   final bool isRedirect;
 
   /// Whether the server requested that a persistent connection be maintained.
   final bool persistentConnection;
+
+  /// The regex pattern to split the cookies in `set-cookie`.
+  static final _regexSplitSetCookies = RegExp(',(?=[^ ])');
 
   BaseResponse(this.statusCode,
       {this.contentLength,
@@ -46,5 +52,25 @@ abstract class BaseResponse {
     } else if (contentLength != null && contentLength! < 0) {
       throw ArgumentError('Invalid content length $contentLength.');
     }
+
+    final setCookie = _getSetCookie(headers);
+    if (setCookie.isNotEmpty) {
+      for (final cookie in setCookie.split(_regexSplitSetCookies)) {
+        cookies.add(Cookie.fromSetCookieValue(cookie));
+      }
+    }
+  }
+
+  /// Returns the value of the `set-cookie` if the [headers] has,
+  /// otherwise empty.
+  static String _getSetCookie(final Map<String, dynamic> headers) {
+    for (final key in headers.keys) {
+      // Some systems return "set-cookie" for various cases.
+      if (key.toLowerCase() == 'set-cookie') {
+        return headers[key] as String;
+      }
+    }
+
+    return '';
   }
 }
