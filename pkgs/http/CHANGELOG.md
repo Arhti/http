@@ -1,3 +1,7 @@
+## 1.1.3
+
+* Add `onSendProgress` callback
+
 ## 1.1.2
 
 * Allow `web: '>=0.3.0 <0.5.0'`.
@@ -36,7 +40,6 @@
 * In `MockHttpClient` use the callback returned `Response.request` instead of
   the argument value to give more control to the callback. This may be breaking
   for callbacks which return incomplete Responses and relied on the default.
-* Add `onSendProgress` callback
 
 ## 0.13.4
 
