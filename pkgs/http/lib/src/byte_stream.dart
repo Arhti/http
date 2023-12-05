@@ -15,6 +15,10 @@ final class ByteStream extends StreamView<List<int>> {
   factory ByteStream.fromBytes(List<int> bytes) =>
       ByteStream(Stream.value(bytes));
 
+  factory ByteStream.withTransformer(Stream<List<int>> stream,
+          StreamTransformer<List<int>, List<int>> transformer) =>
+      ByteStream(stream.transform(transformer));
+
   /// Collects the data of this stream in a [Uint8List].
   Future<Uint8List> toBytes() {
     var completer = Completer<Uint8List>();

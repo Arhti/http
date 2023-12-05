@@ -42,7 +42,8 @@ class StreamedRequest extends BaseRequest {
   final StreamController<List<int>> _controller;
 
   /// Creates a new streaming request.
-  StreamedRequest(super.method, super.url)
+  StreamedRequest(super.method, super.url,
+      {super.downloadProgress, super.uploadProgress})
       : _controller = StreamController<List<int>>(sync: true);
 
   /// Freezes all mutable fields and returns a single-subscription [ByteStream]

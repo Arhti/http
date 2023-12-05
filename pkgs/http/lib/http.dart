@@ -10,6 +10,7 @@ import 'dart:typed_data';
 
 import 'src/client.dart';
 import 'src/exception.dart';
+import 'src/progress.dart';
 import 'src/request.dart';
 import 'src/response.dart';
 import 'src/streamed_request.dart';
@@ -22,6 +23,8 @@ export 'src/client.dart' hide zoneClient;
 export 'src/exception.dart';
 export 'src/multipart_file.dart';
 export 'src/multipart_request.dart';
+export 'src/progress.dart'
+    hide addTransfer, getProgressTransformer, setLength, setTransferred;
 export 'src/request.dart';
 export 'src/response.dart';
 export 'src/streamed_request.dart';
@@ -44,8 +47,10 @@ Future<Response> head(Uri url, {Map<String, String>? headers}) =>
 /// the same server, you should use a single [Client] for all of those requests.
 ///
 /// For more fine-grained control over the request, use [Request] instead.
-Future<Response> get(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.get(url, headers: headers));
+Future<Response> get(Uri url,
+        {Map<String, String>? headers, HttpProgress? downloadProgress}) =>
+    _withClient((client) =>
+        client.get(url, headers: headers, downloadProgress: downloadProgress));
 
 /// Sends an HTTP POST request with the given headers and body to the given URL.
 ///
@@ -66,9 +71,17 @@ Future<Response> get(Uri url, {Map<String, String>? headers}) =>
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> post(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.post(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        HttpProgress? downloadProgress,
+        HttpProgress? uploadProgress}) =>
+    _withClient((client) => client.post(url,
+        headers: headers,
+        body: body,
+        encoding: encoding,
+        downloadProgress: downloadProgress,
+        uploadProgress: uploadProgress));
 
 /// Sends an HTTP PUT request with the given headers and body to the given URL.
 ///
@@ -89,9 +102,17 @@ Future<Response> post(Uri url,
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> put(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.put(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        HttpProgress? downloadProgress,
+        HttpProgress? uploadProgress}) =>
+    _withClient((client) => client.put(url,
+        headers: headers,
+        body: body,
+        encoding: encoding,
+        downloadProgress: downloadProgress,
+        uploadProgress: uploadProgress));
 
 /// Sends an HTTP PATCH request with the given headers and body to the given
 /// URL.
@@ -113,9 +134,17 @@ Future<Response> put(Uri url,
 /// For more fine-grained control over the request, use [Request] or
 /// [StreamedRequest] instead.
 Future<Response> patch(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.patch(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        HttpProgress? downloadProgress,
+        HttpProgress? uploadProgress}) =>
+    _withClient((client) => client.patch(url,
+        headers: headers,
+        body: body,
+        encoding: encoding,
+        downloadProgress: downloadProgress,
+        uploadProgress: uploadProgress));
 
 /// Sends an HTTP DELETE request with the given headers to the given URL.
 ///
@@ -125,9 +154,17 @@ Future<Response> patch(Uri url,
 ///
 /// For more fine-grained control over the request, use [Request] instead.
 Future<Response> delete(Uri url,
-        {Map<String, String>? headers, Object? body, Encoding? encoding}) =>
-    _withClient((client) =>
-        client.delete(url, headers: headers, body: body, encoding: encoding));
+        {Map<String, String>? headers,
+        Object? body,
+        Encoding? encoding,
+        HttpProgress? downloadProgress,
+        HttpProgress? uploadProgress}) =>
+    _withClient((client) => client.delete(url,
+        headers: headers,
+        body: body,
+        encoding: encoding,
+        downloadProgress: downloadProgress,
+        uploadProgress: uploadProgress));
 
 /// Sends an HTTP GET request with the given headers to the given URL and
 /// returns a Future that completes to the body of the response as a [String].
@@ -141,8 +178,10 @@ Future<Response> delete(Uri url,
 ///
 /// For more fine-grained control over the request and response, use [Request]
 /// instead.
-Future<String> read(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.read(url, headers: headers));
+Future<String> read(Uri url,
+        {Map<String, String>? headers, HttpProgress? downloadProgress}) =>
+    _withClient((client) =>
+        client.read(url, headers: headers, downloadProgress: downloadProgress));
 
 /// Sends an HTTP GET request with the given headers to the given URL and
 /// returns a Future that completes to the body of the response as a list of
@@ -157,8 +196,10 @@ Future<String> read(Uri url, {Map<String, String>? headers}) =>
 ///
 /// For more fine-grained control over the request and response, use [Request]
 /// instead.
-Future<Uint8List> readBytes(Uri url, {Map<String, String>? headers}) =>
-    _withClient((client) => client.readBytes(url, headers: headers));
+Future<Uint8List> readBytes(Uri url,
+        {Map<String, String>? headers, HttpProgress? downloadProgress}) =>
+    _withClient((client) => client.readBytes(url,
+        headers: headers, downloadProgress: downloadProgress));
 
 Future<T> _withClient<T>(Future<T> Function(Client) fn) async {
   var client = Client();

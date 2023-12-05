@@ -45,7 +45,12 @@ class MultipartRequest extends BaseRequest {
   /// The list of files to upload for this request.
   final files = <MultipartFile>[];
 
-  MultipartRequest(super.method, super.url);
+  MultipartRequest(
+    super.method,
+    super.url, {
+    super.downloadProgress,
+    super.uploadProgress,
+  });
 
   /// The total length of the request body, in bytes.
   ///
