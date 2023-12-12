@@ -9,6 +9,7 @@ import 'base_request.dart';
 import 'client.dart';
 import 'exception.dart';
 import 'io_streamed_response.dart';
+import 'progress.dart';
 
 /// Create an [IOClient].
 ///
@@ -88,7 +89,10 @@ class IOClient extends BaseClient {
 
   /// Sends an HTTP request and asynchronously returns the response.
   @override
-  Future<IOStreamedResponse> send(BaseRequest request) async {
+  Future<IOStreamedResponse> send(
+    BaseRequest request, {
+    Progress? onSendProgress,
+  }) async {
     if (_inner == null) {
       throw ClientException(
           'HTTP request failed. Client is already closed.', request.url);
@@ -106,7 +110,24 @@ class IOClient extends BaseClient {
         ioRequest.headers.set(name, value);
       });
 
-      var response = await stream.pipe(ioRequest) as HttpClientResponse;
+      HttpClientResponse response;
+      if (onSendProgress != null) {
+        var loaded = 0;
+        onSendProgress(loaded, request.contentLength);
+
+        await ioRequest.addStream(
+          stream.map(
+            (chunk) {
+              loaded += chunk.length;
+              onSendProgress(loaded, request.contentLength);
+              return chunk;
+            },
+          ),
+        );
+        response = await ioRequest.close();
+      } else {
+        response = await stream.pipe(ioRequest) as HttpClientResponse;
+      }
 
       var headers = <String, String>{};
       response.headers.forEach((key, values) {

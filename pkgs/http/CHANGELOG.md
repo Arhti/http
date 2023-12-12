@@ -1,3 +1,7 @@
+## 1.1.3
+
+* Add `onSendProgress` callback
+
 ## 1.1.2
 
 * Allow `web: '>=0.3.0 <0.5.0'`.
