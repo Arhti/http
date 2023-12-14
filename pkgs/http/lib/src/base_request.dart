@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:collection';
 
 import 'package:meta/meta.dart';
@@ -11,6 +12,7 @@ import 'base_client.dart';
 import 'base_response.dart';
 import 'byte_stream.dart';
 import 'client.dart';
+import 'progress.dart';
 import 'streamed_response.dart';
 import 'utils.dart';
 
@@ -89,6 +91,7 @@ abstract class BaseRequest {
   bool _finalized = false;
 
   static final _tokenRE = RegExp(r"^[\w!#%&'*+\-.^`|~]+$");
+
   static String _validateMethod(String method) {
     if (!_tokenRE.hasMatch(method)) {
       throw ArgumentError.value(method, 'method', 'Not a valid method');
@@ -96,7 +99,28 @@ abstract class BaseRequest {
     return method;
   }
 
-  BaseRequest(String method, this.url)
+  /// On upload progress.
+  ///
+  /// If defined, this [HttpProgress.handler] will be called when the upload
+  /// progress changes.
+  ///
+  /// To see the usage of the progress handler, see [HttpProgress].
+  ///
+  /// To see the progress of the download, use [downloadProgress].
+  final HttpProgress? uploadProgress;
+
+  /// On download progress.
+  ///
+  /// If defined, this [HttpProgress.handler] will be called when the download
+  /// progress changes.
+  ///
+  /// To see the usage of the progress handler, see [HttpProgress].
+  ///
+  /// To see the progress of the upload, use [uploadProgress].
+  final HttpProgress? downloadProgress;
+
+  BaseRequest(String method, this.url,
+      {this.uploadProgress, this.downloadProgress})
       : method = _validateMethod(method),
         headers = LinkedHashMap(
             equals: (key1, key2) => key1.toLowerCase() == key2.toLowerCase(),
@@ -132,6 +156,7 @@ abstract class BaseRequest {
     try {
       var response = await client.send(this);
       var stream = onDone(response.stream, client.close);
+
       return StreamedResponse(ByteStream(stream), response.statusCode,
           contentLength: response.contentLength,
           request: response.request,

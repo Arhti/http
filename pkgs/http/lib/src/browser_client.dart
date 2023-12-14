@@ -11,6 +11,7 @@ import 'base_client.dart';
 import 'base_request.dart';
 import 'byte_stream.dart';
 import 'exception.dart';
+import 'progress.dart';
 import 'streamed_response.dart';
 
 final _digitRegex = RegExp(r'^\d+$');
@@ -57,6 +58,7 @@ class BrowserClient extends BaseClient {
     }
     var bytes = await request.finalize().toBytes();
     var xhr = XMLHttpRequest();
+
     _xhrs.add(xhr);
     xhr
       ..open(request.method, '${request.url}', true)
@@ -67,6 +69,24 @@ class BrowserClient extends BaseClient {
     }
 
     var completer = Completer<StreamedResponse>();
+
+    if (request.uploadProgress != null) {
+      setLength(request.uploadProgress!, bytes.length);
+      const EventStreamProvider('progress')
+          .forTarget(xhr.upload)
+          .listen((event) {
+        setTransferred(
+            request.uploadProgress!, (event as ProgressEvent).loaded);
+      });
+    }
+
+    if (request.downloadProgress != null) {
+      const EventStreamProvider('progress').forTarget(xhr).listen((event) {
+        setLength(request.downloadProgress!,
+            (event as ProgressEvent).lengthComputable ? event.total : null);
+        setTransferred(request.downloadProgress!, event.loaded);
+      });
+    }
 
     unawaited(xhr.onLoad.first.then((_) {
       if (xhr.responseHeaders['content-length'] case final contentLengthHeader

@@ -7,51 +7,31 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/http.dart';
-import 'package:http/src/utils.dart';
-import 'package:stream_channel/stream_channel.dart';
 
-void hybridMain(StreamChannel<dynamic> channel) async {
-  final server = await HttpServer.bind('localhost', 0);
+
+void hybridMain() async {
+  final server = await HttpServer.bind('localhost', 8080);
+  print("Server listening on port ${server.port}");
   final url = Uri.http('localhost:${server.port}', '');
+
+  server.defaultResponseHeaders.set('Access-Control-Allow-Origin', '*');
+  server.defaultResponseHeaders.set('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  server.defaultResponseHeaders.set('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  server.defaultResponseHeaders.set('Access-Control-Allow-Credentials', 'true');
+
   server.listen((request) async {
     var path = request.uri.path;
     var response = request.response;
 
-    if (path == '/error') {
-      response
-        ..statusCode = 400
-        ..contentLength = 0;
-      unawaited(response.close());
-      return;
-    }
-
-    if (path == '/loop') {
-      var n = int.parse(request.uri.query);
-      response
-        ..statusCode = 302
-        ..headers.set('location', url.resolve('/loop?${n + 1}').toString())
-        ..contentLength = 0;
-      unawaited(response.close());
-      return;
-    }
-
-    if (path == '/redirect') {
-      response
-        ..statusCode = 302
-        ..headers.set('location', url.resolve('/').toString())
-        ..contentLength = 0;
-      unawaited(response.close());
-      return;
-    }
-
-    if (path == '/no-content-length') {
+    if (path == '/ping') {
       response
         ..statusCode = 200
-        ..contentLength = -1
-        ..write('body');
+        ..contentLength = 0;
       unawaited(response.close());
       return;
     }
+
+
 
     if (path == '/multipart') {
       var completer = Completer<void>();
@@ -60,6 +40,7 @@ void hybridMain(StreamChannel<dynamic> channel) async {
         length += event.length;
       }).onDone(completer.complete);
       await completer.future;
+      print("res $length");
       response
         ..statusCode = 200
         ..contentLength = length.toString().codeUnits.length
@@ -69,12 +50,15 @@ void hybridMain(StreamChannel<dynamic> channel) async {
     }
 
     if (path == '/streamed') {
-      var completer = Completer<void>();
       var length = 0;
-      request.listen((event) {
+
+      /// Browser send speed is uncontrollable, so we need to slow down the
+      /// server to make sure the progress event is triggered.
+      await for (var event in request) {
+        await Future.delayed(Duration(milliseconds: 50));
         length += event.length;
-      }).onDone(completer.complete);
-      await completer.future;
+      }
+
       response
         ..statusCode = 200
         ..contentLength = length.toString().codeUnits.length
@@ -86,7 +70,7 @@ void hybridMain(StreamChannel<dynamic> channel) async {
     if (path == '/download') {
       response
         ..statusCode = 200
-        ..contentLength = 20 * _kb * 8;
+        ..contentLength = -1;
 
       _generateStream(20).listen((event) {
         response.add(event);
@@ -100,7 +84,7 @@ void hybridMain(StreamChannel<dynamic> channel) async {
     var requestBodyBytes = await ByteStream(request).toBytes();
     var encodingName = request.uri.queryParameters['response-encoding'];
     var outputEncoding =
-        encodingName == null ? ascii : requiredEncodingForCharset(encodingName);
+    encodingName == null ? ascii : requiredEncodingForCharset(encodingName);
 
     response.headers.contentType =
         ContentType('application', 'json', charset: outputEncoding.name);
@@ -111,7 +95,7 @@ void hybridMain(StreamChannel<dynamic> channel) async {
       requestBody = null;
     } else if (request.headers.contentType?.charset != null) {
       var encoding =
-          requiredEncodingForCharset(request.headers.contentType!.charset!);
+      requiredEncodingForCharset(request.headers.contentType!.charset!);
       requestBody = encoding.decode(requestBodyBytes);
     } else {
       requestBody = requestBodyBytes;
@@ -140,7 +124,6 @@ void hybridMain(StreamChannel<dynamic> channel) async {
       ..write(body);
     unawaited(response.close());
   });
-  channel.sink.add(server.port);
 }
 
 const _kb = 1 << 10;
@@ -155,3 +138,26 @@ Stream<List<int>> _generateStream(int length) async* {
 
   return;
 }
+
+
+void main() {
+  hybridMain();
+}
+
+
+/// Returns the [Encoding] that corresponds to [charset].
+///
+/// Returns [fallback] if [charset] is null or if no [Encoding] was found that
+/// corresponds to [charset].
+Encoding encodingForCharset(String? charset, [Encoding fallback = latin1]) {
+  if (charset == null) return fallback;
+  return Encoding.getByName(charset) ?? fallback;
+}
+
+/// Returns the [Encoding] that corresponds to [charset].
+///
+/// Throws a [FormatException] if no [Encoding] was found that corresponds to
+/// [charset].
+Encoding requiredEncodingForCharset(String charset) =>
+    Encoding.getByName(charset) ??
+        (throw FormatException('Unsupported encoding "$charset".'));

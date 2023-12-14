@@ -2,6 +2,7 @@
 // for details. All rights reserved. Use of this source code is governed by a
 // BSD-style license that can be found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:io';
 
 import 'base_client.dart';
@@ -9,6 +10,7 @@ import 'base_request.dart';
 import 'client.dart';
 import 'exception.dart';
 import 'io_streamed_response.dart';
+import 'progress.dart';
 
 /// Create an [IOClient].
 ///
@@ -29,6 +31,7 @@ BaseClient createClient() {
 class _ClientSocketException extends ClientException
     implements SocketException {
   final SocketException cause;
+
   _ClientSocketException(SocketException e, Uri uri)
       : cause = e,
         super(e.message, uri);
@@ -94,7 +97,13 @@ class IOClient extends BaseClient {
           'HTTP request failed. Client is already closed.', request.url);
     }
 
-    var stream = request.finalize();
+    Stream<List<int>> stream = request.finalize();
+
+    if (request.uploadProgress != null && request.contentLength != null) {
+      setLength(request.uploadProgress!, request.contentLength!);
+      stream =
+          stream.transform(getProgressTransformer(request.uploadProgress!));
+    }
 
     try {
       var ioRequest = (await _inner!.openUrl(request.method, request.url))
@@ -116,12 +125,18 @@ class IOClient extends BaseClient {
         headers[key] = values.map((value) => value.trimRight()).join(',');
       });
 
-      return IOStreamedResponse(
-          response.handleError((Object error) {
-            final httpException = error as HttpException;
-            throw ClientException(httpException.message, httpException.uri);
-          }, test: (error) => error is HttpException),
-          response.statusCode,
+      var responseStream = response.handleError((Object error) {
+        final httpException = error as HttpException;
+        throw ClientException(httpException.message, httpException.uri);
+      }, test: (error) => error is HttpException);
+
+      if (request.downloadProgress != null && response.contentLength > 0) {
+        setLength(request.downloadProgress!, response.contentLength);
+        responseStream = responseStream
+            .transform(getProgressTransformer(request.downloadProgress!));
+      }
+
+      return IOStreamedResponse(responseStream, response.statusCode,
           contentLength:
               response.contentLength == -1 ? null : response.contentLength,
           request: request,
